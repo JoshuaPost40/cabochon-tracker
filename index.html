@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cabochon — Action Tracker</title>
+<style>
+:root {
+  --bg:#f7f6f3;--surface:#fff;--surface2:#f0ede8;--border:#e2ddd6;--border2:#ccc8c0;
+  --text:#1a1916;--text2:#6b6760;--text3:#9c9890;
+  --gold:#b8872a;--gold-light:#f5edd8;--gold-border:#dfc078;
+  --blue:#2a5fb8;--blue-light:#eaf0fb;
+  --red:#c0392b;--red-light:#fdf0ee;
+  --green:#2a7a4b;--green-light:#edf7f1;
+  --amber:#c07a1a;--amber-light:#fdf3e3;
+  --purple:#5b3d9e;--purple-light:#f0edf8;
+  --r:8px;--rl:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.shell{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:220px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.main{flex:1;overflow-y:auto;display:flex;flex-direction:column;min-width:0}
+.logo{padding:18px 16px 14px;border-bottom:1px solid var(--border);flex-shrink:0}
+.logo-name{font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gold)}
+.logo-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.nav{padding:8px;flex:1}
+.nav-section{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);padding:12px 8px 5px}
+.nav-item{display:flex;align-items:center;gap:7px;padding:6px 8px;border-radius:var(--r);font-size:13px;color:var(--text2);cursor:pointer;border:none;background:none;width:100%;text-align:left;transition:background .1s}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{background:var(--gold-light);color:var(--gold);font-weight:500}
+.nav-count{margin-left:auto;font-size:11px;background:var(--surface2);color:var(--text3);padding:1px 6px;border-radius:10px}
+.nav-item.active .nav-count{background:var(--gold-border);color:var(--gold)}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:12px}
+.topbar-left h1{font-size:16px;font-weight:600}
+.topbar-left p{font-size:12px;color:var(--text3);margin-top:1px}
+.topbar-right{display:flex;gap:7px;flex-wrap:wrap}
+.btn{border:1px solid var(--border2);background:var(--surface);color:var(--text);border-radius:var(--r);padding:6px 12px;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-family:inherit;white-space:nowrap;transition:background .1s}
+.btn:hover{background:var(--surface2)}
+.btn.primary{background:var(--gold);color:#fff;border-color:var(--gold)}
+.btn.primary:hover{background:#a07520}
+.btn.sm{padding:4px 9px;font-size:12px}
+.btn.danger{color:var(--red);border-color:#f0c0bb}
+.btn.danger:hover{background:var(--red-light)}
+.btn:disabled{opacity:.5;cursor:default}
+.btn.active-view{background:var(--gold-light);color:var(--gold);border-color:var(--gold-border)}
+.content{padding:16px 20px;flex:1}
+
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:12px 14px}
+.stat-n{font-size:22px;font-weight:700}
+.stat-l{font-size:10px;color:var(--text3);margin-top:2px;text-transform:uppercase;letter-spacing:.05em}
+.stat-n.warn{color:var(--amber)}
+.stat-n.good{color:var(--green)}
+
+/* View switcher */
+.view-bar{display:flex;gap:6px;margin-bottom:14px;align-items:center;flex-wrap:wrap}
+.view-bar .filters{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
+.filters select,.filters input{font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);color:var(--text);font-family:inherit}
+
+/* Card/group view */
+.group-hdr{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);padding:14px 0 6px;border-bottom:1px solid var(--border);margin-bottom:2px;display:flex;justify-content:space-between}
+.task-card{display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border-radius:var(--r);cursor:pointer;border:1px solid transparent;margin-bottom:1px;transition:background .1s}
+.task-card:hover{background:var(--surface);border-color:var(--border)}
+.task-chk{width:17px;height:17px;border:1.5px solid var(--border2);border-radius:4px;flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer}
+.task-chk.done{background:var(--green);border-color:var(--green);color:#fff}
+.task-body{flex:1;min-width:0}
+.task-title{font-size:13px;line-height:1.4}
+.task-title.done{text-decoration:line-through;color:var(--text3)}
+.task-meta{display:flex;gap:5px;flex-wrap:wrap;margin-top:3px;align-items:center}
+.badge{font-size:11px;padding:1px 6px;border-radius:8px;font-weight:500}
+.badge.high{background:#fdf0ee;color:#922b21}
+.badge.low{background:var(--green-light);color:var(--green)}
+.badge.project{background:var(--blue-light);color:var(--blue)}
+.badge.person{background:var(--purple-light);color:var(--purple)}
+.badge.overdue{background:var(--red-light);color:var(--red)}
+.meta-txt{font-size:11px;color:var(--text3)}
+
+/* TABLE VIEW */
+.task-table{width:100%;border-collapse:collapse;font-size:13px}
+.task-table th{text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);padding:8px 10px;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;cursor:pointer;white-space:nowrap;user-select:none}
+.task-table th:hover{color:var(--text)}
+.task-table th .sort-arrow{margin-left:4px;opacity:.4}
+.task-table th.sorted .sort-arrow{opacity:1;color:var(--gold)}
+.task-table td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+.task-table tr:hover td{background:var(--surface2)}
+.task-table tr.done-row td{opacity:.55}
+.task-table .col-check{width:32px}
+.task-table .col-title{min-width:200px}
+.task-table .col-person{width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.task-table .col-project{width:110px}
+.task-table .col-cat{width:100px}
+.task-table .col-pri{width:70px}
+.task-table .col-due{width:100px;white-space:nowrap}
+.task-table .col-status{width:70px}
+.due-cell{font-size:12px}
+.due-cell.overdue{color:var(--red);font-weight:500}
+.due-cell.soon{color:var(--amber);font-weight:500}
+.due-cell.ok{color:var(--text2)}
+
+/* GANTT VIEW */
+.gantt-wrap{overflow-x:auto}
+.gantt{min-width:900px}
+.gantt-header{display:flex;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10}
+.gantt-label-col{width:260px;flex-shrink:0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);padding:8px 10px;border-right:1px solid var(--border)}
+.gantt-timeline{flex:1;display:flex}
+.gantt-month{border-right:1px solid var(--border);font-size:11px;font-weight:600;color:var(--text3);padding:8px 6px;text-align:center;text-transform:uppercase;letter-spacing:.05em}
+.gantt-row{display:flex;border-bottom:1px solid var(--border);align-items:center;min-height:34px}
+.gantt-row:hover{background:var(--surface2)}
+.gantt-row-label{width:260px;flex-shrink:0;padding:6px 10px;font-size:12px;border-right:1px solid var(--border);display:flex;align-items:center;gap:6px;overflow:hidden;cursor:pointer}
+.gantt-row-label span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px}
+.gantt-bar-area{flex:1;position:relative;height:34px}
+.gantt-bar{position:absolute;height:16px;top:9px;border-radius:3px;min-width:4px;cursor:pointer;transition:opacity .1s}
+.gantt-bar:hover{opacity:.8}
+.gantt-bar.high{background:var(--gold)}
+.gantt-bar.low{background:#aab8d0}
+.gantt-bar.done{background:var(--green);opacity:.6}
+.gantt-bar.p0{background:#b8872a}.gantt-bar.p1{background:#2a5fb8}.gantt-bar.p2{background:#c0392b}
+.gantt-bar.p3{background:#2a7a4b}.gantt-bar.p4{background:#7b3fa0}.gantt-bar.p5{background:#c07a1a}
+.gantt-bar.p6{background:#1a7a8a}.gantt-bar.p7{background:#8a3a1a}.gantt-bar.p8{background:#3a608a}.gantt-bar.p9{background:#6b6760}
+.gantt-legend{display:flex;gap:10px;flex-wrap:wrap;padding:8px 12px;border-bottom:1px solid var(--border);font-size:11px;background:var(--surface);position:sticky;top:36px;z-index:9}
+.gantt-legend-item{display:flex;align-items:center;gap:5px}
+.gantt-legend-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.subtask-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);font-size:13px}
+.subtask-row:last-child{border-bottom:none}
+.subtask-chk{width:15px;height:15px;border:1.5px solid var(--border2);border-radius:3px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;cursor:pointer;background:var(--surface)}
+.subtask-chk.done{background:var(--green);border-color:var(--green);color:#fff}
+.subtask-title{flex:1;font-size:13px}
+.subtask-title.done{text-decoration:line-through;color:var(--text3)}
+.add-subtask-row{display:flex;gap:6px;margin-top:8px}
+.add-subtask-row input{flex:1;font-size:13px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);color:var(--text);font-family:inherit}
+.gantt-today{position:absolute;top:0;bottom:0;width:1px;background:var(--red);opacity:.5;z-index:5}
+.gantt-group-row{background:var(--surface2);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text2);padding:5px 10px;border-bottom:1px solid var(--border)}
+.gantt-no-bar{font-size:10px;color:var(--text3);padding:0 8px;font-style:italic}
+
+/* Detail panel */
+.detail-overlay{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:100;display:none;align-items:flex-start;justify-content:flex-end}
+.detail-overlay.open{display:flex}
+.detail-panel{width:460px;height:100vh;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.detail-hdr{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-shrink:0}
+.detail-hdr-title{font-size:14px;font-weight:600;line-height:1.4;flex:1}
+.detail-close{border:none;background:none;cursor:pointer;color:var(--text3);font-size:20px;padding:0 2px;line-height:1;flex-shrink:0}
+.detail-close:hover{color:var(--text)}
+.detail-body{flex:1;overflow-y:auto;padding:14px 18px}
+.detail-footer{padding:12px 18px;border-top:1px solid var(--border);display:flex;gap:7px;flex-shrink:0}
+.d-field{margin-bottom:12px}
+.d-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:4px}
+.d-select,.d-input,.d-textarea{width:100%;font-size:13px;padding:6px 9px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);color:var(--text);font-family:inherit}
+.d-textarea{min-height:65px;resize:vertical}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.history-item{padding:9px 11px;background:var(--surface2);border-radius:var(--r);margin-bottom:7px}
+.history-meta{font-size:11px;color:var(--text3);margin-bottom:3px;display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.history-note{font-size:13px;line-height:1.5}
+.history-tag{font-size:11px;background:var(--gold-light);color:var(--gold);padding:1px 6px;border-radius:7px;border:1px solid var(--gold-border)}
+.add-hist textarea{width:100%;font-size:13px;padding:7px 9px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);color:var(--text);font-family:inherit;min-height:55px;resize:vertical}
+.add-hist-row{display:flex;gap:7px;margin-top:7px}
+.add-hist-row input{flex:1;font-size:13px;padding:5px 9px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);color:var(--text);font-family:inherit}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--rl);width:100%;max-width:500px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.15)}
+.modal-hdr{padding:16px 18px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-hdr h2{font-size:15px;font-weight:600}
+.modal-body{padding:14px 18px}
+.modal-footer{padding:10px 18px;border-top:1px solid var(--border);display:flex;gap:7px;justify-content:flex-end}
+.field{margin-bottom:11px}
+.field label{font-size:12px;font-weight:500;color:var(--text2);display:block;margin-bottom:3px}
+.field input,.field select,.field textarea{width:100%;font-size:13px;padding:6px 9px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);color:var(--text);font-family:inherit}
+.field textarea{min-height:75px;resize:vertical}
+.f2-field{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.notice{padding:9px 12px;border-radius:var(--r);font-size:13px;margin-top:10px}
+.notice.success{background:var(--green-light);color:var(--green)}
+.notice.warn{background:var(--amber-light);color:var(--amber)}
+.notice.error{background:var(--red-light);color:var(--red)}
+.notice.info{background:var(--blue-light);color:var(--blue)}
+.report-box{background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:14px;font-size:12px;line-height:1.9;white-space:pre-wrap;font-family:'Courier New',monospace;margin-top:10px;max-height:380px;overflow-y:auto}
+.empty{text-align:center;padding:40px 20px;color:var(--text3);font-size:14px}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="sidebar">
+    <div class="logo"><div class="logo-name">Cabochon</div><div class="logo-sub">Action Tracker</div></div>
+    <div class="nav">
+      <div class="nav-section">Views</div>
+      <button class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard">📊 Dashboard</button>
+      <button class="nav-item" onclick="showPage('tasks')" id="nav-tasks">✓ All Tasks <span class="nav-count" id="count-open">—</span></button>
+      <button class="nav-item" onclick="showPage('brief')" id="nav-brief">☀ Morning Brief</button>
+      <div class="nav-section">Projects</div>
+      <div id="nav-projects"></div>
+      <div class="nav-section">People</div>
+      <div id="nav-people"></div>
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- DASHBOARD -->
+    <div id="page-dashboard" style="display:flex;flex-direction:column">
+      <div class="topbar">
+        <div class="topbar-left"><h1>Dashboard</h1><p id="dash-date"></p></div>
+        <div class="topbar-right">
+          <button class="btn" onclick="openModal('minutes-modal')">📝 Meeting minutes</button>
+          <button class="btn" onclick="openModal('report-modal')">📄 Report</button>
+          <button class="btn primary" onclick="openAddTask()">+ Add task</button>
+        </div>
+      </div>
+      <div class="content">
+        <div class="stats" id="dash-stats"></div>
+        <div class="group-hdr"><span>Due this week</span></div>
+        <div id="dash-due" style="margin-bottom:20px"></div>
+        <div class="group-hdr"><span>Overdue</span></div>
+        <div id="dash-overdue"></div>
+      </div>
+    </div>
+
+    <!-- TASKS -->
+    <div id="page-tasks" style="display:none;flex-direction:column">
+      <div class="topbar">
+        <div class="topbar-left"><h1 id="tasks-title">All Tasks</h1><p id="tasks-sub"></p></div>
+        <div class="topbar-right">
+          <button class="btn" onclick="openModal('minutes-modal')">📝 Minutes</button>
+          <button class="btn primary" onclick="openAddTask()">+ Add task</button>
+        </div>
+      </div>
+      <div class="content">
+        <div class="view-bar">
+          <button class="btn sm active-view" id="vbtn-category" onclick="setView('category')">By category</button>
+          <button class="btn sm" id="vbtn-person" onclick="setView('person')">By person</button>
+          <button class="btn sm" id="vbtn-table" onclick="setView('table')">📋 Table</button>
+          <button class="btn sm" id="vbtn-gantt" onclick="setView('gantt')">📅 Gantt</button>
+          <div class="filters">
+            <select id="filter-status" onchange="renderTasks()"><option value="open">Open</option><option value="done">Done</option><option value="all">All</option></select>
+            <select id="filter-project" onchange="renderTasks()"><option value="">All projects</option></select>
+            <select id="filter-person" onchange="renderTasks()"><option value="">All people</option></select>
+            <input type="text" id="filter-search" placeholder="Search..." oninput="renderTasks()">
+          </div>
+        </div>
+        <div id="task-list"></div>
+      </div>
+    </div>
+
+    <!-- BRIEF -->
+    <div id="page-brief" style="display:none;flex-direction:column">
+      <div class="topbar">
+        <div class="topbar-left"><h1>☀ Morning Brief</h1><p>AI daily rundown from inbox + tracker</p></div>
+        <div class="topbar-right"><button class="btn primary" id="brief-btn" onclick="generateBrief()">Generate brief</button></div>
+      </div>
+      <div class="content"><div id="brief-output"><div class="empty">Hit "Generate brief" to scan your inbox and tracker.</div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL PANEL -->
+<div class="detail-overlay" id="detail-overlay" onclick="closeDetailBg(event)">
+  <div class="detail-panel">
+    <div class="detail-hdr">
+      <div class="detail-hdr-title" id="d-title"></div>
+      <button class="detail-close" onclick="closeDetail()">×</button>
+    </div>
+    <div class="detail-body">
+      <div class="f2">
+        <div class="d-field"><div class="d-label">Assigned to</div><select class="d-select" id="d-person" onchange="updateField('person',this.value)"></select></div>
+        <div class="d-field"><div class="d-label">Project</div><select class="d-select" id="d-project" onchange="updateField('project',this.value)"></select></div>
+      </div>
+      <div class="f2">
+        <div class="d-field"><div class="d-label">Priority</div><select class="d-select" id="d-priority" onchange="updateField('priority',this.value)"><option value="high">High</option><option value="low">Low</option></select></div>
+        <div class="d-field"><div class="d-label">Status</div><select class="d-select" id="d-status" onchange="updateStatus(this.value)"><option value="open">Open</option><option value="done">Done</option></select></div>
+      </div>
+      <div class="f2">
+        <div class="d-field"><div class="d-label">Start date</div><input type="date" class="d-input" id="d-start" onchange="updateField('start_date',this.value)"></div>
+        <div class="d-field"><div class="d-label">Due / end date</div><input type="date" class="d-input" id="d-due" onchange="updateField('due',this.value)"></div>
+      </div>
+      <div class="f2">
+        <div class="d-field"><div class="d-label">Category</div>
+          <select class="d-select" id="d-category" onchange="updateField('category',this.value)">
+            <option value="">None</option><option>General</option><option>Finance</option><option>Banking</option><option>HR</option><option>Operations</option><option>Sales</option><option>Legal</option>
+          </select>
+        </div>
+        <div class="d-field"><div class="d-label">Status</div>
+          <select class="d-select" id="d-status" onchange="updateStatus(this.value)">
+            <option value="open">Open</option><option value="done">Done</option>
+          </select>
+        </div>
+      </div>
+      <div class="d-field"><div class="d-label">Notes</div><textarea class="d-textarea" id="d-notes" onblur="updateField('notes',this.value)" placeholder="Context, links, background..."></textarea></div>
+      <div class="d-label" style="margin-top:14px;margin-bottom:8px">Subtasks</div>
+      <div id="d-subtasks"></div>
+      <div class="add-subtask-row">
+        <input type="text" id="subtask-input" placeholder="Add a subtask..." onkeydown="if(event.key==='Enter')addSubtask()">
+        <button class="btn sm primary" onclick="addSubtask()">Add</button>
+      </div>
+      <div class="d-label" style="margin-top:16px;margin-bottom:8px">History & updates</div>
+      <div id="d-history"></div>
+      <div class="add-hist">
+        <textarea id="hist-note" placeholder="Add an update, status note, or comment..."></textarea>
+        <div class="add-hist-row">
+          <input type="text" id="hist-author" placeholder="Your name">
+          <button class="btn sm primary" onclick="addHistory()">Add update</button>
+        </div>
+      </div>
+    </div>
+    <div class="detail-footer">
+      <button class="btn sm danger" onclick="deleteTask()">Delete</button>
+      <div style="flex:1"></div>
+      <button class="btn sm" onclick="closeDetail()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD MODAL -->
+<div class="modal-overlay" id="add-modal">
+  <div class="modal">
+    <div class="modal-hdr"><h2>Add task</h2><button class="detail-close" onclick="closeModal('add-modal')">×</button></div>
+    <div class="modal-body">
+      <div class="field"><label>Task *</label><input id="new-title" placeholder="What needs to happen?"></div>
+      <div class="f2-field">
+        <div class="field"><label>Assigned to</label><select id="new-person"><option value="">Unassigned</option></select></div>
+        <div class="field"><label>Project</label><select id="new-project"><option value="">No project</option></select></div>
+      </div>
+      <div class="f2-field">
+        <div class="field"><label>Start date</label><input type="date" id="new-start"></div>
+        <div class="field"><label>Due date</label><input type="date" id="new-due"></div>
+      </div>
+      <div class="f2-field">
+        <div class="field"><label>Priority</label><select id="new-priority"><option value="high">High</option><option value="low">Low</option></select></div>
+        <div class="field"><label> </label></div>
+      </div>
+      <div class="field"><label>Notes</label><textarea id="new-notes" placeholder="Context, links, etc."></textarea></div>
+    </div>
+    <div class="modal-footer"><button class="btn" onclick="closeModal('add-modal')">Cancel</button><button class="btn primary" onclick="addTask()">Save task</button></div>
+  </div>
+</div>
+
+<!-- MINUTES MODAL -->
+<div class="modal-overlay" id="minutes-modal">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-hdr"><h2>📝 Extract from meeting minutes</h2><button class="detail-close" onclick="closeModal('minutes-modal')">×</button></div>
+    <div class="modal-body">
+      <div class="field"><label>Paste meeting notes</label><textarea id="minutes-text" style="min-height:150px" placeholder="Paste your meeting notes — Claude will extract action items and add them to the tracker."></textarea></div>
+      <div class="field"><label>Default project</label><select id="minutes-project"><option value="">None</option></select></div>
+      <div id="minutes-notice"></div>
+    </div>
+    <div class="modal-footer"><button class="btn" onclick="closeModal('minutes-modal')">Cancel</button><button class="btn primary" id="minutes-btn" onclick="extractMinutes()">✦ Extract actions</button></div>
+  </div>
+</div>
+
+<!-- REPORT MODAL -->
+<div class="modal-overlay" id="report-modal">
+  <div class="modal" style="max-width:620px">
+    <div class="modal-hdr"><h2>📄 Project report</h2><button class="detail-close" onclick="closeModal('report-modal')">×</button></div>
+    <div class="modal-body">
+      <div class="f2-field">
+        <div class="field"><label>Project</label><select id="report-project"><option value="">All projects</option></select></div>
+        <div class="field"><label>Show</label><select id="report-filter"><option value="open">Open only</option><option value="all">All</option><option value="done">Completed</option></select></div>
+      </div>
+      <button class="btn primary" onclick="generateReport()">Generate</button>
+      <div id="report-output"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('report-modal')">Close</button>
+      <button class="btn" id="copy-btn" style="display:none" onclick="copyReport()">Copy</button>
+      <button class="btn primary" id="email-btn" style="display:none" onclick="draftEmail()">Draft email ↗</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SB='https://nlwujrlfzhgrzdcdstlq.supabase.co';
+const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5sd3VqcmxmemhncnpkY2RzdGxxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMjQwODEsImV4cCI6MjA5NjcwMDA4MX0.il1nk5zOpJJGT6UwsfMui4aQZQJJ79ChmBOITcq-0Ic';
+const DEFAULT_PEOPLE=["Josh Post (COO)","Herman Post (CEO)","Ryan LeMay (Legal)","Sara Buchanan (Exec Admin)","Hadar Steinberg (Controller)","Kei Isawa (CFO)","Andrew Grinyer","Ashley Grinyer","Larry Ferriman","Tony Schenkel"];
+const DEFAULT_PROJECTS=["Grinyer","Post Structures","Cedar Shoppe","BarnWurx","BNK Design & Construction","Skyline","Select Stone"];
+const CAT_ORDER=['General','Legal','Finance','Banking','HR','Operations','Sales'];
+const SEED=[
+  {title:"Letter of Intent & Partnership Docs — Ryan drafting, follow-up questions in progress",person:"Ryan LeMay (Legal)",project:"Grinyer",priority:"high",category:"Legal",notes:"Ryan has begun process"},
+  {title:"Shareholder Meeting — schedule to review April & May financials",person:"Josh Post (COO)",project:"Grinyer",priority:"high",category:"General",due:"2026-06-23"},
+  {title:"KPIs — implement leadership team KPI meeting & spreadsheet",person:"Josh Post (COO)",project:"Grinyer",priority:"high",category:"General"},
+  {title:"Cash Injection / Debt Repayment — Kei verifying fund balances against LOI",person:"Kei Isawa (CFO)",project:"Grinyer",priority:"high",category:"Finance",notes:"Larry G also involved"},
+  {title:"LOI — CRA debt ~$100K higher than stated; Ryan to proceed with legal due diligence",person:"Ryan LeMay (Legal)",project:"Grinyer",priority:"high",category:"Legal",notes:"From share purchase thread Jun 9"},
+  {title:"Advise Ryan: can he contact Larry directly re LOI, or should Josh mediate?",person:"Josh Post (COO)",project:"Grinyer",priority:"high",category:"Legal"},
+  {title:"Connect Kei + Ryan to review balance sheet & confirm shareholder debt before Larry discussion",person:"Josh Post (COO)",project:"Grinyer",priority:"high",category:"Legal",notes:"Carried from week of Jun 9"},
+  {title:"Month End Close (April) — balance sheet cleanup: inventory write-off, CRA liability, loan corrections",person:"Kei Isawa (CFO)",project:"Grinyer",priority:"high",category:"Finance",notes:"Before Brownlow handoff"},
+  {title:"Month End Close (May) — complete coding; Andrew to identify unmatched deposit ($500+$135)",person:"Kei Isawa (CFO)",project:"Grinyer",priority:"high",category:"Finance",due:"2026-06-17"},
+  {title:"April & May financial packages with written commentary — send to Josh, present to ownership",person:"Kei Isawa (CFO)",project:"Grinyer",priority:"high",category:"Finance",due:"2026-06-17",notes:"Carried from Jun 4"},
+  {title:"Year-ends with Brownlow — engagement letter required, books over by early Aug",person:"Kei Isawa (CFO)",project:"Grinyer",priority:"high",category:"Finance",due:"2026-08-01"},
+  {title:"Verify FY2025 Tonin year-end entries correct in QuickBooks",person:"Kei Isawa (CFO)",project:"Grinyer",priority:"high",category:"Finance",notes:"Before Brownlow handoff"},
+  {title:"Break-even & gross profit per door analysis (retail vs wholesale)",person:"Kei Isawa (CFO)",project:"Grinyer",priority:"high",category:"Finance",notes:"After May deferred revenue finalized"},
+  {title:"Cash flow plan — send updated plan to Ashley before each Wednesday call",person:"Kei Isawa (CFO)",project:"Grinyer",priority:"high",category:"Finance",notes:"Ongoing from Jun 10"},
+  {title:"FX Management / WISE account — develop better USD/CAD process",person:"Kei Isawa (CFO)",project:"Grinyer",priority:"low",category:"Finance",notes:"Discuss on upcoming call"},
+  {title:"CRA payroll penalty relief — contact CRA rep (provided by Josh)",person:"Kei Isawa (CFO)",project:"Grinyer",priority:"high",category:"Finance",due:"2026-06-13",notes:"Carried from Jun 4"},
+  {title:"File payroll deductions via QBO this week; own ongoing",person:"Kei Isawa (CFO)",project:"Grinyer",priority:"high",category:"Finance",due:"2026-06-13"},
+  {title:"Toronto Star prepayment (~$1,831) via credit card before Saturday ad run",person:"Ashley Grinyer",project:"Grinyer",priority:"high",category:"Finance",due:"2026-06-13"},
+  {title:"Pay 407 ETR May invoice; Burlington showroom utility (May) + evaluate auto-pay",person:"Kei Isawa (CFO)",project:"Grinyer",priority:"high",category:"Finance",due:"2026-06-13"},
+  {title:"Interactive Custom Solutions — partial payment on January invoice",person:"Kei Isawa (CFO)",project:"Grinyer",priority:"high",category:"Finance",due:"2026-06-13"},
+  {title:"Omar/Cincinnati — invoice ~$8,000 USD; incorporate USD into cash flow model",person:"Andrew Grinyer",project:"Grinyer",priority:"high",category:"Finance",due:"2026-06-11"},
+  {title:"Assets setup — depreciation logs & asset planning for budget",person:"Kei Isawa (CFO)",project:"Grinyer",priority:"low",category:"Finance"},
+  {title:"Banking (CIBC) — retrieve updated trade name cert from Ontario business portal",person:"Andrew Grinyer",project:"Grinyer",priority:"high",category:"Banking",due:"2026-06-13",notes:"Required before DocuSign to shareholders"},
+  {title:"Confirm Kei CIBC access includes Cash Management (USD visibility)",person:"Andrew Grinyer",project:"Grinyer",priority:"high",category:"Banking"},
+  {title:"Personal credit cards & accounts — develop recommendation to clean up to business-only",person:"Ashley Grinyer",project:"Grinyer",priority:"low",category:"Banking"},
+  {title:"Employee Handbook — update & formal rollout Aug 14, 2026",person:"Sara Buchanan (Exec Admin)",project:"Grinyer",priority:"high",category:"HR",due:"2026-08-14"},
+  {title:"Employee Contracts & Role Descriptions — implement after handbook complete",person:"Sara Buchanan (Exec Admin)",project:"Grinyer",priority:"high",category:"HR"},
+  {title:"Legal: Cameron McConnell (LCA) — revised LCA from McKenzie Lake received",person:"Andrew Grinyer",project:"Grinyer",priority:"high",category:"Legal",due:"2026-06-13",notes:"Andrew reaching out to Stuart/legal"},
+  {title:"Recruitment: Sales, Installer, General Labour — ads live; target July (Sales)",person:"Sara Buchanan (Exec Admin)",project:"Grinyer",priority:"high",category:"HR"},
+  {title:"Dext receipt uploads — follow up with field staff (only Andrew currently active)",person:"Andrew Grinyer",project:"Grinyer",priority:"high",category:"Operations",due:"2026-06-13"},
+  {title:"Vito insurance cancellation — confirm with Larry that cancellation letter was sent",person:"Andrew Grinyer",project:"Grinyer",priority:"high",category:"Operations",due:"2026-06-13",notes:"Carried; close once confirmed"},
+  {title:"Invite Herman Post / Bert to Grinyer monthly meeting",person:"Josh Post (COO)",project:"Grinyer",priority:"low",category:"General",notes:"Offered May 8"},
+  {title:"Apply for company credit card",person:"Kei Isawa (CFO)",project:"Grinyer",priority:"high",category:"Finance"},
+  {title:"Set up supplier agreements — David Left",person:"Andrew Grinyer",project:"Grinyer",priority:"high",category:"Operations"},
+  {title:"Dealer Network Expansion — develop plan to onboard Canadian dealers",person:"Andrew Grinyer",project:"Grinyer",priority:"high",category:"Sales",notes:"Website in initial stages"},
+  {title:"Employment agreements for Andrew & Ashley (specific)",person:"Josh Post (COO)",project:"Grinyer",priority:"high",category:"Legal"},
+  {title:"Health benefit program — look at alternatives (Spring 2027)",person:"Josh Post (COO)",project:"Grinyer",priority:"low",category:"HR",due:"2027-03-01"},
+  {title:"Develop Sales Package & start recruiting",person:"Sara Buchanan (Exec Admin)",project:"Grinyer",priority:"high",category:"Sales",notes:"Discussed May 7 with AG, SB — overdue from May 15"},
+];
+
+let tasks=[],people=[],projects=[],activeId=null,currentView='category',sortCol='due',sortDir=1;
+
+const api=async(path,method='GET',body=null)=>{
+  const r=await fetch(SB+'/rest/v1/'+path,{method,headers:{'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json','Prefer':'return=representation'},body:body?JSON.stringify(body):null});
+  const t=await r.text();return t?JSON.parse(t):null;
+};
+
+async function init(){
+  document.getElementById('dash-date').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  await Promise.all([loadPeople(),loadProjects()]);
+  await loadTasks();
+  populateSelects();renderNav();renderDashboard();renderTasks();
+}
+
+async function loadTasks(){
+  try{const d=await api('tasks?select=*&order=created_at.asc');tasks=d||[];if(!tasks.length)await seedTasks();}catch(e){tasks=[];}
+}
+async function loadPeople(){
+  try{const d=await api('people?select=*&order=name.asc');people=(d||[]).map(p=>p.name);
+    if(!people.length){for(const n of DEFAULT_PEOPLE)try{await api('people','POST',{name:n});}catch(e){}; people=[...DEFAULT_PEOPLE];}
+  }catch(e){people=[...DEFAULT_PEOPLE];}
+}
+async function loadProjects(){
+  try{const d=await api('projects?select=*&order=name.asc');projects=(d||[]).map(p=>p.name);
+    if(!projects.length){for(const n of DEFAULT_PROJECTS)try{await api('projects','POST',{name:n});}catch(e){}; projects=[...DEFAULT_PROJECTS];}
+  }catch(e){projects=[...DEFAULT_PROJECTS];}
+}
+async function seedTasks(){
+  for(const t of SEED)try{await api('tasks','POST',{title:t.title,person:t.person||null,project:t.project||null,priority:t.priority||'high',due:t.due||null,notes:t.notes||null,category:t.category||null,done:false});}catch(e){}
+  const d=await api('tasks?select=*&order=created_at.asc');tasks=d||[];
+}
+
+function populateSelects(skipRestore){
+  const pOpts='<option value="">Unassigned</option>'+people.map(p=>`<option value="${p}">${p}</option>`).join('');
+  const prOpts=projects.map(p=>`<option value="${p}">${p}</option>`).join('');
+  ['new-person','d-person'].forEach(id=>{const el=document.getElementById(id);if(el){const v=skipRestore?null:el.value;el.innerHTML=pOpts;if(v)el.value=v;}});
+  ['new-project','d-project'].forEach(id=>{const el=document.getElementById(id);if(el){const v=skipRestore?null:el.value;el.innerHTML='<option value="">No project</option>'+prOpts;if(v)el.value=v;}});
+  ['filter-person'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML='<option value="">All people</option>'+people.map(p=>`<option value="${p}">${p}</option>`).join('');});
+  ['filter-project','minutes-project','report-project'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML='<option value="">All projects</option>'+prOpts;});
+}
+
+function renderNav(){
+  const open=tasks.filter(t=>!t.done).length;
+  document.getElementById('count-open').textContent=open;
+  const pc={};tasks.filter(t=>!t.done).forEach(t=>{if(t.project)pc[t.project]=(pc[t.project]||0)+1;});
+  document.getElementById('nav-projects').innerHTML=projects.map(p=>`<button class="nav-item" onclick="filterProject('${p.replace(/'/g,"\\'")}')">📁 ${p} <span class="nav-count">${pc[p]||0}</span></button>`).join('');
+  const pp={};tasks.filter(t=>!t.done).forEach(t=>{if(t.person)pp[t.person]=(pp[t.person]||0)+1;});
+  document.getElementById('nav-people').innerHTML=people.slice(0,7).map(p=>`<button class="nav-item" onclick="filterPerson('${p.replace(/'/g,"\\'")}')">👤 ${p.split(' ')[0]} <span class="nav-count">${pp[p]||0}</span></button>`).join('');
+}
+
+function renderDashboard(){
+  const now=new Date();now.setHours(0,0,0,0);
+  const week=new Date(now);week.setDate(week.getDate()+7);
+  const open=tasks.filter(t=>!t.done);
+  const overdue=open.filter(t=>t.due&&new Date(t.due)<now);
+  const dueWeek=open.filter(t=>t.due&&new Date(t.due)>=now&&new Date(t.due)<=week);
+  document.getElementById('dash-stats').innerHTML=`
+    <div class="stat-card"><div class="stat-n">${tasks.length}</div><div class="stat-l">Total</div></div>
+    <div class="stat-card"><div class="stat-n">${open.length}</div><div class="stat-l">Open</div></div>
+    <div class="stat-card"><div class="stat-n good">${tasks.filter(t=>t.done).length}</div><div class="stat-l">Done</div></div>
+    <div class="stat-card"><div class="stat-n warn">${overdue.length}</div><div class="stat-l">Overdue</div></div>`;
+  document.getElementById('dash-due').innerHTML=dueWeek.length?dueWeek.map(miniRow).join(''):'<div style="font-size:13px;color:var(--text3);padding:8px 0">Nothing due this week.</div>';
+  document.getElementById('dash-overdue').innerHTML=overdue.length?overdue.map(miniRow).join(''):'<div style="font-size:13px;color:var(--text3);padding:8px 0">None — you\'re on top of it.</div>';
+}
+
+function miniRow(t){
+  return `<div class="task-card" onclick="openDetail('${t.id}')">
+    <div class="task-chk ${t.done?'done':''}" onclick="event.stopPropagation();toggleDone('${t.id}')">${t.done?'✓':''}</div>
+    <div class="task-body"><div class="task-title">${t.title}</div>
+    <div class="task-meta">${t.priority?`<span class="badge ${t.priority}">${t.priority}</span>`:''}${t.project?`<span class="badge project">${t.project}</span>`:''}${t.person?`<span class="badge person">${t.person.split(' ')[0]}</span>`:''}${t.due?`<span class="meta-txt">📅 ${t.due}</span>`:''}</div></div></div>`;
+}
+
+function getFiltered(){
+  const status=document.getElementById('filter-status')?.value||'open';
+  const proj=document.getElementById('filter-project')?.value||'';
+  const person=document.getElementById('filter-person')?.value||'';
+  const search=(document.getElementById('filter-search')?.value||'').toLowerCase();
+  return tasks.filter(t=>{
+    if(status==='open'&&t.done)return false;
+    if(status==='done'&&!t.done)return false;
+    if(proj&&t.project!==proj)return false;
+    if(person&&t.person!==person)return false;
+    if(search&&!t.title.toLowerCase().includes(search)&&!(t.notes||'').toLowerCase().includes(search))return false;
+    return true;
+  });
+}
+
+function setView(v){
+  currentView=v;
+  ['category','person','table','gantt'].forEach(x=>{
+    const b=document.getElementById('vbtn-'+x);
+    if(b)b.classList.toggle('active-view',x===v);
+  });
+  renderTasks();
+}
+
+function renderTasks(){
+  const list=document.getElementById('task-list');if(!list)return;
+  const filtered=getFiltered();
+  const sub=document.getElementById('tasks-sub');
+  if(sub)sub.textContent=`${filtered.filter(t=>!t.done).length} open · ${filtered.filter(t=>t.done).length} done`;
+  if(currentView==='table'){renderTable(filtered,list);return;}
+  if(currentView==='gantt'){renderGantt(filtered,list);return;}
+  if(!filtered.length){list.innerHTML='<div class="empty">No tasks match this filter.</div>';return;}
+  if(currentView==='category'){
+    const by={};filtered.forEach(t=>{const k=t.category||'General';if(!by[k])by[k]=[];by[k].push(t);});
+    const sorted=CAT_ORDER.filter(c=>by[c]?.length).concat(Object.keys(by).filter(k=>!CAT_ORDER.includes(k)&&by[k].length));
+    list.innerHTML=sorted.map(k=>`<div class="group-hdr"><span>${k}</span><span style="font-weight:400">${by[k].filter(t=>!t.done).length} open</span></div>`+by[k].map(taskCard).join('')).join('');
+  } else if(currentView==='person'){
+    const by={};filtered.forEach(t=>{const k=t.person||'Unassigned';if(!by[k])by[k]=[];by[k].push(t);});
+    list.innerHTML=Object.entries(by).map(([k,ts])=>`<div class="group-hdr"><span>${k}</span><span style="font-weight:400">${ts.filter(t=>!t.done).length} open</span></div>`+ts.map(taskCard).join('')).join('');
+  }
+  renderNav();
+}
+
+function taskCard(t){
+  const now=new Date();now.setHours(0,0,0,0);
+  const overdue=!t.done&&t.due&&new Date(t.due)<now;
+  return `<div class="task-card" onclick="openDetail('${t.id}')">
+    <div class="task-chk ${t.done?'done':''}" onclick="event.stopPropagation();toggleDone('${t.id}')">${t.done?'✓':''}</div>
+    <div class="task-body"><div class="task-title ${t.done?'done':''}">${t.title}</div>
+    <div class="task-meta">
+      ${t.priority?`<span class="badge ${t.priority}">${t.priority}</span>`:''}
+      ${t.category&&currentView!=='category'?`<span class="meta-txt">${t.category}</span>`:''}
+      ${t.project?`<span class="badge project">${t.project}</span>`:''}
+      ${t.person&&currentView!=='person'?`<span class="badge person">${t.person.split(' ')[0]}</span>`:''}
+      ${t.due?`<span class="${overdue?'badge overdue':'meta-txt'}">📅 ${t.due}</span>`:''}
+    </div></div></div>`;
+}
+
+// TABLE VIEW
+let _sortCol='due',_sortDir=1;
+function renderTable(filtered,list){
+  const sorted=[...filtered].sort((a,b)=>{
+    let av=a[_sortCol]||'',bv=b[_sortCol]||'';
+    if(_sortCol==='done')return _sortDir*(a.done===b.done?0:a.done?1:-1);
+    return _sortDir*(av<bv?-1:av>bv?1:0);
+  });
+  const arrow=d=>d===1?'↑':'↓';
+  const th=(col,label,cls)=>`<th class="${cls||''} ${_sortCol===col?'sorted':''}" onclick="sortTable('${col}')">${label} <span class="sort-arrow">${_sortCol===col?arrow(_sortDir):'↕'}</span></th>`;
+  list.innerHTML=`<div style="overflow-x:auto"><table class="task-table">
+    <thead><tr>
+      <th class="col-check"></th>
+      ${th('title','Task','col-title')}
+      ${th('person','Person','col-person')}
+      ${th('project','Project','col-project')}
+      ${th('category','Category','col-cat')}
+      ${th('priority','Priority','col-pri')}
+      ${th('due','Due date','col-due')}
+      ${th('done','Status','col-status')}
+    </tr></thead>
+    <tbody>${sorted.map(t=>{
+      const now=new Date();now.setHours(0,0,0,0);
+      const overdue=!t.done&&t.due&&new Date(t.due)<now;
+      const soon=!t.done&&t.due&&!overdue&&new Date(t.due)<=new Date(now.getTime()+7*86400000);
+      return `<tr class="${t.done?'done-row':''}" onclick="openDetail('${t.id}')">
+        <td class="col-check"><div class="task-chk ${t.done?'done':''}" onclick="event.stopPropagation();toggleDone('${t.id}')">${t.done?'✓':''}</div></td>
+        <td class="col-title" style="font-size:13px">${t.title}</td>
+        <td class="col-person" style="font-size:12px;color:var(--text2)">${t.person?t.person.split(' ').slice(0,2).join(' '):''}</td>
+        <td class="col-project"><span class="badge project" style="font-size:11px">${t.project||''}</span></td>
+        <td class="col-cat" style="font-size:12px;color:var(--text2)">${t.category||''}</td>
+        <td class="col-pri"><span class="badge ${t.priority||'low'}">${t.priority||''}</span></td>
+        <td class="col-due"><span class="due-cell ${overdue?'overdue':soon?'soon':'ok'}">${t.due||'—'}</span></td>
+        <td class="col-status"><span class="badge ${t.done?'low':'high'}" style="${t.done?'':'background:#fff5f5'}">${t.done?'Done':'Open'}</span></td>
+      </tr>`;
+    }).join('')}</tbody></table></div>`;
+}
+
+function sortTable(col){
+  if(_sortCol===col)_sortDir*=-1; else{_sortCol=col;_sortDir=1;}
+  renderTasks();
+}
+
+// GANTT VIEW
+function renderGantt(filtered,list){
+  const hasDue=filtered.filter(t=>t.due);
+  if(!hasDue.length){list.innerHTML='<div class="empty">No tasks with due dates to display in Gantt view.</div>';return;}
+  const dates=hasDue.map(t=>new Date(t.due));
+  const minD=new Date(Math.min(...dates));
+  const maxD=new Date(Math.max(...dates));
+  minD.setDate(1);
+  maxD.setMonth(maxD.getMonth()+1);maxD.setDate(0);
+  const totalDays=(maxD-minD)/86400000+1;
+  const today=new Date();today.setHours(0,0,0,0);
+
+  // Build months for header
+  const months=[];let cur=new Date(minD);
+  while(cur<=maxD){
+    const start=new Date(cur);
+    const end=new Date(cur.getFullYear(),cur.getMonth()+1,0);
+    const clampEnd=end>maxD?maxD:end;
+    const days=(clampEnd-start)/86400000+1;
+    months.push({label:start.toLocaleDateString('en-US',{month:'short',year:'2-digit'}),days,pct:(days/totalDays*100).toFixed(2)});
+    cur=new Date(cur.getFullYear(),cur.getMonth()+1,1);
+  }
+
+  const todayPct=today>=minD&&today<=maxD?((today-minD)/86400000/totalDays*100).toFixed(2):null;
+
+  // Group by category
+  const by={};
+  filtered.forEach(t=>{const k=t.category||'General';if(!by[k])by[k]=[];by[k].push(t);});
+  const catsSorted=CAT_ORDER.filter(c=>by[c]?.length).concat(Object.keys(by).filter(k=>!CAT_ORDER.includes(k)&&by[k]?.length));
+
+  // Build legend for people who have tasks with dates
+  const peopleWithDates=[...new Set(hasDue.map(t=>t.person).filter(Boolean))];
+  const legend=peopleWithDates.map(p=>`<div class="gantt-legend-item"><div class="gantt-legend-dot" style="background:${getPersonColor(p)}"></div><span>${p.split(' ').slice(0,2).join(' ')}</span></div>`).join('');
+
+  let rows='';
+  catsSorted.forEach(cat=>{
+    rows+=`<div class="gantt-group-row">${cat}</div>`;
+    by[cat].forEach(t=>{
+      const pClass=t.done?'done':getPersonClass(t.person);
+      rows+=`<div class="gantt-row">
+        <div class="gantt-row-label" onclick="openDetail('${t.id}')">
+          <div class="task-chk ${t.done?'done':''}" onclick="event.stopPropagation();toggleDone('${t.id}')" style="flex-shrink:0">${t.done?'✓':''}</div>
+          <span title="${t.title}">${t.title}</span>
+        </div>
+        <div class="gantt-bar-area">
+          ${todayPct?`<div class="gantt-today" style="left:${todayPct}%"></div>`:''}
+          ${(()=>{
+            if(!t.due)return `<span class="gantt-no-bar">no date</span>`;
+            const endD=new Date(t.due);
+            const startD=t.start_date?new Date(t.start_date):endD;
+            const leftPct=((startD-minD)/86400000/totalDays*100);
+            const widthPct=Math.max(((endD-startD)/86400000/totalDays*100),0.8);
+            return `<div class="gantt-bar ${pClass}" 
+              style="left:${leftPct.toFixed(2)}%;width:${widthPct.toFixed(2)}%;background:${t.done?'':getPersonColor(t.person)}" 
+              onclick="openDetail('${t.id}')"
+              title="${t.title}${t.start_date?' | Start: '+t.start_date:''} | Due: ${t.due}${t.person?' | '+t.person:''}"></div>`;
+          })()}
+        </div>
+      </div>`;
+    });
+  });
+
+  list.innerHTML=`<div class="gantt-wrap"><div class="gantt">
+    <div class="gantt-header">
+      <div class="gantt-label-col">Task</div>
+      <div class="gantt-timeline">${months.map(m=>`<div class="gantt-month" style="flex:${m.pct} 0 0%">${m.label}</div>`).join('')}</div>
+    </div>
+    ${legend?`<div class="gantt-legend">${legend}</div>`:''}
+    ${rows}
+  </div></div>`;
+}
+
+// SUBTASKS
+const subtasksByTask={};
+async function loadSubtasks(taskId){
+  try{
+    const s=await api(`task_history?task_id=eq.${taskId}&note=like.SUBTASK:*&order=created_at.asc`);
+    const el=document.getElementById('d-subtasks');
+    // Store subtasks keyed by their history id
+    if(!s||!s.length){el.innerHTML='<div style="font-size:12px;color:var(--text3);margin-bottom:4px">No subtasks yet.</div>';return;}
+    el.innerHTML=s.map(x=>{
+      const done=x.status_change==='subtask-done';
+      const title=x.note.replace(/^SUBTASK:/,'');
+      return `<div class="subtask-row">
+        <div class="subtask-chk ${done?'done':''}" onclick="toggleSubtask('${x.id}','${taskId}',${done})">${done?'✓':''}</div>
+        <div class="subtask-title ${done?'done':''}">${title}</div>
+        <button style="border:none;background:none;cursor:pointer;color:var(--text3);font-size:13px" onclick="deleteSubtask('${x.id}','${taskId}')">×</button>
+      </div>`;
+    }).join('');
+  }catch(e){}
+}
+
+async function addSubtask(){
+  const input=document.getElementById('subtask-input');
+  const title=input.value.trim();if(!title||!activeId)return;
+  try{
+    await api('task_history','POST',{task_id:activeId,author:'',note:'SUBTASK:'+title,status_change:'subtask-open'});
+    input.value='';await loadSubtasks(activeId);
+  }catch(e){alert('Error: '+e.message);}
+}
+
+async function toggleSubtask(histId,taskId,wasDone){
+  try{
+    await api(`task_history?id=eq.${histId}`,'PATCH',{status_change:wasDone?'subtask-open':'subtask-done'});
+    await loadSubtasks(taskId);
+  }catch(e){}
+}
+
+async function deleteSubtask(histId,taskId){
+  try{await api(`task_history?id=eq.${histId}`,'DELETE');await loadSubtasks(taskId);}catch(e){}
+}
+
+// PERSON COLOR MAP
+const PERSON_COLORS=['#b8872a','#2a5fb8','#c0392b','#2a7a4b','#7b3fa0','#c07a1a','#1a7a8a','#8a3a1a','#3a608a','#6b6760'];
+function getPersonColor(person){
+  if(!person)return '#aab8d0';
+  const idx=people.indexOf(person);
+  return PERSON_COLORS[idx>=0?idx%PERSON_COLORS.length:9];
+}
+function getPersonClass(person){
+  if(!person)return 'low';
+  const idx=people.indexOf(person);
+  return idx>=0?'p'+(idx%10):'p9';
+}
+  const t=tasks.find(x=>x.id===id);if(!t)return;
+  activeId=id;
+  populateSelects(true); // populate fresh, don't try to restore old value
+  document.getElementById('d-title').textContent=t.title;
+  document.getElementById('d-priority').value=t.priority||'high';
+  document.getElementById('d-due').value=t.due||'';
+  document.getElementById('d-start').value=t.start_date||'';
+  document.getElementById('d-notes').value=t.notes||'';
+  document.getElementById('d-category').value=t.category||'';
+  document.getElementById('d-status').value=t.done?'done':'open';
+  // Set dropdowns after innerHTML is set
+  setTimeout(()=>{
+    document.getElementById('d-person').value=t.person||'';
+    document.getElementById('d-project').value=t.project||'';
+  },0);
+  await loadHistory(id);
+  await loadSubtasks(id);
+  document.getElementById('detail-overlay').classList.add('open');
+}
+
+async function loadHistory(taskId){
+  try{
+    const h=await api(`task_history?task_id=eq.${taskId}&note=not.like.SUBTASK:*&order=created_at.asc`);
+    const el=document.getElementById('d-history');
+    if(!h||!h.length){el.innerHTML='<div style="font-size:12px;color:var(--text3);margin-bottom:8px">No updates yet.</div>';return;}
+    el.innerHTML=h.map(x=>`<div class="history-item">
+      <div class="history-meta"><span>${x.author||'Team'}</span><span>·</span><span>${new Date(x.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</span>${x.status_change?`<span class="history-tag">${x.status_change}</span>`:''}</div>
+      <div class="history-note">${x.note}</div></div>`).join('');
+  }catch(e){}
+}
+
+async function addHistory(){
+  const note=document.getElementById('hist-note').value.trim();
+  const author=document.getElementById('hist-author').value.trim()||'Team';
+  if(!note||!activeId)return;
+  try{await api('task_history','POST',{task_id:activeId,author,note});document.getElementById('hist-note').value='';await loadHistory(activeId);}
+  catch(e){alert('Error: '+e.message);}
+}
+
+async function updateField(field,value){
+  if(!activeId)return;
+  try{
+    await api(`tasks?id=eq.${activeId}`,'PATCH',{[field]:value||null,updated_at:new Date().toISOString()});
+    const t=tasks.find(x=>x.id===activeId);if(t){t[field]=value;}
+    renderTasks();renderDashboard();renderNav();
+  }catch(e){}
+}
+
+async function updateStatus(value){
+  const done=value==='done';
+  await updateField('done',done);
+  const t=tasks.find(x=>x.id===activeId);if(t)t.done=done;
+}
+
+async function toggleDone(id){
+  const t=tasks.find(x=>x.id===id);if(!t)return;
+  t.done=!t.done;
+  try{await api(`tasks?id=eq.${id}`,'PATCH',{done:t.done,updated_at:new Date().toISOString()});renderTasks();renderDashboard();renderNav();}
+  catch(e){t.done=!t.done;}
+}
+
+async function deleteTask(){
+  if(!activeId||!confirm('Delete this task?'))return;
+  try{await api(`tasks?id=eq.${activeId}`,'DELETE');tasks=tasks.filter(x=>x.id!==activeId);closeDetail();renderTasks();renderDashboard();renderNav();}
+  catch(e){alert('Error: '+e.message);}
+}
+
+function closeDetailBg(e){if(e.target===document.getElementById('detail-overlay'))closeDetail();}
+function closeDetail(){document.getElementById('detail-overlay').classList.remove('open');activeId=null;}
+
+async function addTask(){
+  const title=document.getElementById('new-title').value.trim();if(!title)return;
+  try{
+    const body={title,person:document.getElementById('new-person').value||null,project:document.getElementById('new-project').value||null,priority:document.getElementById('new-priority').value,due:document.getElementById('new-due').value||null,start_date:document.getElementById('new-start').value||null,notes:document.getElementById('new-notes').value.trim()||null,category:document.getElementById('new-category').value||null,done:false};
+    const r=await api('tasks','POST',body);if(r&&r[0])tasks.push(r[0]);
+    closeModal('add-modal');
+    ['new-title','new-notes','new-due','new-start'].forEach(id=>document.getElementById(id).value='');
+    renderTasks();renderDashboard();renderNav();
+  }catch(e){alert('Error: '+e.message);}
+}
+
+async function extractMinutes(){
+  const text=document.getElementById('minutes-text').value.trim();if(!text)return;
+  const defProj=document.getElementById('minutes-project').value;
+  const notice=document.getElementById('minutes-notice');
+  const btn=document.getElementById('minutes-btn');
+  btn.disabled=true;btn.textContent='Extracting...';
+  notice.innerHTML='<div class="notice info">Reading your meeting notes...</div>';
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,
+        messages:[{role:'user',content:`Extract all action items from these meeting notes. Return ONLY a JSON array with keys: title, person (match to one of: ${people.join(', ')}; null if no match), priority ("high" or "low"), due (YYYY-MM-DD or null), notes (brief context or null), category (one of: General, Finance, Banking, HR, Operations, Sales, Legal, or null).\n\nMeeting notes:\n${text}\n\nReturn only the JSON array, no markdown.`}]})});
+    const data=await resp.json();
+    const raw=data.content?.find(c=>c.type==='text')?.text||'[]';
+    let items;try{items=JSON.parse(raw.replace(/```json|```/g,''));}catch(e){items=[];}
+    if(!items.length){notice.innerHTML='<div class="notice warn">No action items found.</div>';btn.disabled=false;btn.textContent='✦ Extract actions';return;}
+    let added=0;
+    for(const item of items){
+      try{const r=await api('tasks','POST',{title:item.title,person:item.person||null,project:defProj||null,priority:item.priority||'high',due:item.due||null,notes:item.notes||null,category:item.category||null,done:false});if(r&&r[0]){tasks.push(r[0]);added++;}}catch(e){}
+    }
+    notice.innerHTML=`<div class="notice success">✓ Added ${added} action item${added!==1?'s':''}.</div>`;
+    renderTasks();renderDashboard();renderNav();
+    setTimeout(()=>closeModal('minutes-modal'),1500);
+  }catch(e){notice.innerHTML=`<div class="notice error">Error: ${e.message}</div>`;}
+  btn.disabled=false;btn.textContent='✦ Extract actions';
+}
+
+function generateReport(){
+  const proj=document.getElementById('report-project').value;
+  const filter=document.getElementById('report-filter').value;
+  const date=new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+  const label=proj||'All Projects';
+  let items=tasks.filter(t=>{
+    if(proj&&t.project!==proj)return false;
+    if(filter==='open'&&t.done)return false;
+    if(filter==='done'&&!t.done)return false;
+    return true;
+  });
+  const cats={General:[],Legal:[],Finance:[],Banking:[],HR:[],Operations:[],Sales:[]};
+  items.forEach(t=>{const c=t.category&&cats[t.category]?t.category:'General';cats[c].push(t);});
+  const lines=[`ACTION ITEMS — ${label.toUpperCase()}\n${date}\n${'─'.repeat(44)}`];
+  for(const [cat,ts] of Object.entries(cats)){
+    const open=ts.filter(t=>!t.done);const done=ts.filter(t=>t.done);
+    if(!open.length&&(filter==='open'||!done.length))continue;
+    lines.push(`\n${cat.toUpperCase()}\n`);
+    open.forEach(t=>{lines.push(`[ ] ${t.title}`);const d=[];if(t.person)d.push(`→ ${t.person}`);if(t.due)d.push(`Due: ${t.due}`);if(d.length)lines.push(`    ${d.join('  ')}`);if(t.notes)lines.push(`    ${t.notes}`);});
+    if(filter!=='open')done.forEach(t=>lines.push(`[x] ${t.title}${t.person?' — '+t.person:''}`));
+  }
+  const openCount=items.filter(t=>!t.done).length;
+  lines.push(`\n${'─'.repeat(44)}\n${openCount} open · ${items.filter(t=>t.done).length} completed`);
+  const report=lines.join('\n');
+  document.getElementById('report-output').innerHTML=`<div class="report-box">${report}</div>`;
+  document.getElementById('copy-btn').style.display='';
+  document.getElementById('email-btn').style.display='';
+  window._lastReport={report,label};
+}
+
+function copyReport(){const el=document.querySelector('.report-box');if(el)navigator.clipboard.writeText(el.textContent).then(()=>alert('Copied!'));}
+function draftEmail(){if(window._lastReport)sendPrompt(`Draft a polished client-facing email version of this action items report for ${window._lastReport.label}, matching Josh's format:\n${window._lastReport.report}`);}
+
+async function generateBrief(){
+  const btn=document.getElementById('brief-btn');btn.disabled=true;btn.textContent='Generating...';
+  const out=document.getElementById('brief-output');
+  out.innerHTML='<div style="padding:40px;text-align:center;color:var(--text3)">Scanning tracker...</div>';
+  try{
+    const now=new Date();now.setHours(0,0,0,0);
+    const week=new Date(now);week.setDate(week.getDate()+7);
+    const overdue=tasks.filter(t=>!t.done&&t.due&&new Date(t.due)<now);
+    const dueWeek=tasks.filter(t=>!t.done&&t.due&&new Date(t.due)>=now&&new Date(t.due)<=week);
+    const noOwner=tasks.filter(t=>!t.done&&!t.person);
+    const summary=`Open: ${tasks.filter(t=>!t.done).length}. Overdue: ${overdue.length}. Due this week: ${dueWeek.length}. Unassigned: ${noOwner.length}.\n\nOVERDUE:\n${overdue.map(t=>`- ${t.title} (${t.person||'unassigned'}, due ${t.due})`).join('\n')||'None'}\n\nDUE THIS WEEK:\n${dueWeek.map(t=>`- ${t.title} (${t.person||'unassigned'}, due ${t.due})`).join('\n')||'None'}\n\nUNASSIGNED:\n${noOwner.map(t=>`- ${t.title}`).join('\n')||'None'}`;
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:600,
+        messages:[{role:'user',content:`You are Josh Post's COO assistant. Write a concise morning brief from this tracker snapshot. Direct, prioritized, no fluff. Flag anything critical.\n\n${summary}\n\nToday: ${new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}.`}]})});
+    const data=await resp.json();
+    const brief=data.content?.find(c=>c.type==='text')?.text||'Could not generate.';
+    out.innerHTML=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:18px 20px;margin-bottom:14px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:10px;color:var(--gold)">☀ ${new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}</div>
+      <div style="font-size:14px;line-height:1.8;white-space:pre-wrap">${brief}</div></div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+        <div class="stat-card"><div class="stat-n warn">${overdue.length}</div><div class="stat-l">Overdue</div></div>
+        <div class="stat-card"><div class="stat-n">${dueWeek.length}</div><div class="stat-l">Due this week</div></div>
+        <div class="stat-card"><div class="stat-n">${noOwner.length}</div><div class="stat-l">Unassigned</div></div>
+      </div>`;
+  }catch(e){out.innerHTML=`<div class="notice error">Error: ${e.message}</div>`;}
+  btn.disabled=false;btn.textContent='Regenerate';
+}
+
+function showPage(p){
+  ['dashboard','tasks','brief'].forEach(x=>{const el=document.getElementById('page-'+x);if(el)el.style.display=x===p?'flex':'none';});
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
+  const nav=document.getElementById('nav-'+p);if(nav)nav.classList.add('active');
+}
+
+function filterProject(p){showPage('tasks');document.getElementById('tasks-title').textContent=p;document.getElementById('filter-project').value=p;renderTasks();}
+function filterPerson(p){showPage('tasks');document.getElementById('tasks-title').textContent=p;document.getElementById('filter-person').value=p;renderTasks();}
+function openModal(id){populateSelects();document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function openAddTask(){openModal('add-modal');}
+
+init();
+</script>
+</body>
+</html>
