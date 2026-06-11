@@ -371,7 +371,7 @@ function dashRow(t){
     <div class="task-chk ${t.done?'done':''}" onclick="toggleDone('${t.id}')">${t.done?'✓':''}</div>
     <div style="flex:1">${t.title}</div>
     ${t.person?`<span style="font-size:13px;color:var(--text2)">${t.person.split(' ')[0]}</span>`:''}
-    ${t.due?`<span style="font-size:13px;color:${overdue?'var(--red)':'var(--amber)';font-weight:500}">📅 ${t.due}</span>`:''}
+    ${t.due?`<span style="font-size:13px;font-weight:500;color:${overdue?'var(--red)':'var(--amber)'}">📅 ${t.due}</span>`:''}
   </div>`;
 }
 
