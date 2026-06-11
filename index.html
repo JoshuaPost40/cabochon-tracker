@@ -590,13 +590,12 @@ function sortTable(col){
 function renderGantt(filtered,list){
   const hasDue=filtered.filter(t=>t.due);
   if(!hasDue.length){list.innerHTML='<div class="empty">No tasks with due dates to display in Gantt view.</div>';return;}
-  const dates=hasDue.map(t=>new Date(t.due));
-  const minD=new Date(Math.min(...dates));
-  const maxD=new Date(Math.max(...dates));
-  minD.setDate(1);
+  // Always show next quarter: today → today + 90 days
+  const today=new Date();today.setHours(0,0,0,0);
+  const minD=new Date(today.getFullYear(),today.getMonth(),1);
+  const maxD=new Date(today.getTime()+90*86400000);
   maxD.setMonth(maxD.getMonth()+1);maxD.setDate(0);
   const totalDays=(maxD-minD)/86400000+1;
-  const today=new Date();today.setHours(0,0,0,0);
 
   // Build months for header
   const months=[];let cur=new Date(minD);
