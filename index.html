@@ -710,9 +710,10 @@ function getPersonClass(person){
   const idx=people.indexOf(person);
   return idx>=0?'p'+(idx%10):'p9';
 }
+async function openDetail(id){
   const t=tasks.find(x=>x.id===id);if(!t)return;
   activeId=id;
-  populateSelects(true); // populate fresh, don't try to restore old value
+  populateSelects(true);
   document.getElementById('d-title').textContent=t.title;
   document.getElementById('d-priority').value=t.priority||'high';
   document.getElementById('d-due').value=t.due||'';
