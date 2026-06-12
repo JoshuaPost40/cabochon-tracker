@@ -736,7 +736,7 @@ async function extractMinutes(){
   btn.disabled=true;btn.textContent='Extracting...';
   notice.innerHTML='<div class="notice info">Reading your meeting notes...</div>';
   try{
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
+    const resp=await fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,
         messages:[{role:'user',content:`Extract all action items from these meeting notes. Return ONLY a JSON array with keys: title, person (match to one of: ${people.join(', ')}; null if no match), priority ("high" or "low"), due (YYYY-MM-DD or null), notes (brief context or null), category (General/Finance/Banking/HR/Operations/Sales/Legal or null).\n\nMeeting notes:\n${text}\n\nReturn only the JSON array, no markdown.`}]})});
     const data=await resp.json();
@@ -793,7 +793,7 @@ async function generateBrief(){
     const dueWeek=tasks.filter(t=>!t.done&&t.due&&new Date(t.due)>=now&&new Date(t.due)<=week);
     const noOwner=tasks.filter(t=>!t.done&&!t.person);
     const summary=`Open: ${tasks.filter(t=>!t.done).length}. Overdue: ${overdue.length}. Due this week: ${dueWeek.length}. Unassigned: ${noOwner.length}.\n\nOVERDUE:\n${overdue.map(t=>`- ${t.title} (${t.person||'unassigned'}, due ${t.due})`).join('\n')||'None'}\n\nDUE THIS WEEK:\n${dueWeek.map(t=>`- ${t.title} (${t.person||'unassigned'}, due ${t.due})`).join('\n')||'None'}`;
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
+    const resp=await fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:600,
         messages:[{role:'user',content:`You are Josh Post's COO assistant. Write a concise morning brief from this tracker snapshot. Direct and prioritized.\n\n${summary}\n\nToday: ${new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}.`}]})});
     const data=await resp.json();
