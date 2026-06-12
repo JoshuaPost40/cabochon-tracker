@@ -67,9 +67,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .group-hdr span.cnt{font-weight:400;font-size:12px}
 
 /* TASK ROW — inline editable */
-.task-row{display:grid;grid-template-columns:28px 1fr 180px 140px 90px 110px 90px 36px;align-items:center;gap:0;padding:6px 4px;border-radius:var(--r);border:1px solid transparent;min-height:48px}
+.task-row{display:grid;grid-template-columns:28px 1fr 180px 140px 90px 110px 90px 90px 36px;align-items:center;gap:0;padding:6px 4px;border-radius:var(--r);border:1px solid transparent;min-height:48px}
 .task-row:hover{background:var(--surface);border-color:var(--border)}
 .task-row.expanded{background:var(--surface);border-color:var(--border);border-bottom-left-radius:0;border-bottom-right-radius:0}
+.task-row.overdue-row{background:#fff5f5;border-color:#f5c0bb}
 .task-chk{width:20px;height:20px;border:2px solid var(--border2);border-radius:5px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;background:var(--surface)}
 .task-chk.done{background:var(--green);border-color:var(--green);color:#fff}
 .task-chk:hover{border-color:var(--gold)}
@@ -115,7 +116,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .add-subtask input{flex:1;font-size:13px;padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);color:var(--text);font-family:inherit}
 
 /* Column headers */
-.col-headers{display:grid;grid-template-columns:28px 1fr 180px 140px 90px 110px 90px 36px;gap:0;padding:4px 4px 8px;border-bottom:1px solid var(--border);margin-bottom:4px}
+.col-headers{display:grid;grid-template-columns:28px 1fr 180px 140px 90px 110px 90px 90px 36px;gap:0;padding:4px 4px 8px;border-bottom:1px solid var(--border);margin-bottom:4px}
 .col-hdr{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);padding:0 6px;cursor:pointer;user-select:none}
 .col-hdr:hover{color:var(--text)}
 .col-hdr.sorted{color:var(--gold)}
@@ -262,7 +263,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       </div>
       <div class="f2">
         <div class="field"><label>Start date</label><input type="date" id="new-start"></div>
+        <div class="field"><label>Initiated date</label><input type="date" id="new-initiated"></div>
+      </div>
+      <div class="f2">
         <div class="field"><label>Due date</label><input type="date" id="new-due"></div>
+        <div class="field"><label>Duration (days) → sets due date</label><input type="number" id="new-duration" placeholder="e.g. 14" min="1" onchange="calcNewDue()"></div>
       </div>
       <div class="field"><label>Notes</label><textarea id="new-notes" placeholder="Context, links, etc."></textarea></div>
     </div>
@@ -419,6 +424,7 @@ function renderTasks(){
     <div class="col-hdr">Priority</div>
     <div class="col-hdr">Due date</div>
     <div class="col-hdr" style="text-align:center">% Done</div>
+    <div class="col-hdr">Initiated</div>
     <div class="col-hdr"></div>
   </div>`;
 
@@ -448,7 +454,12 @@ function taskRow(t){
   const pOpts=people.map(p=>`<option value="${p}"${t.person===p?' selected':''}>${p}</option>`).join('');
   const prOpts=projects.map(p=>`<option value="${p}"${t.project===p?' selected':''}>${p}</option>`).join('');
   const isExp=expandedId===t.id;
-  return `<div class="task-row${isExp?' expanded':''}" id="tr-${t.id}">
+  // Days on radar
+  const initDate=t.initiated_date?new Date(t.initiated_date):new Date(t.created_at||now);
+  const daysOn=Math.floor((now-initDate)/86400000);
+  const daysLabel=daysOn<=0?'today':daysOn===1?'1 day':`${daysOn}d`;
+  const daysColor=daysOn>90?'var(--red)':daysOn>30?'var(--amber)':'var(--text3)';
+  return `<div class="task-row${isExp?' expanded':''}${overdue?' overdue-row':''}" id="tr-${t.id}">
     <div class="task-chk ${t.done?'done':''}" onclick="toggleDone('${t.id}')">${t.done?'✓':''}</div>
     <input class="ie ie-title${t.done?' done':''}" value="${t.title.replace(/"/g,'&quot;')}" onblur="saveField('${t.id}','title',this.value)" onkeydown="if(event.key==='Enter')this.blur()">
     <select class="ie ie-select" onchange="saveField('${t.id}','person',this.value)">
@@ -466,6 +477,10 @@ function taskRow(t){
       <div class="progress-bar-bg"><div class="progress-bar-fill${t.done?' done':''}" style="width:${t.done?100:(t.progress||0)}%"></div></div>
       <div class="progress-label">${t.done?'100':t.progress||0}%</div>
     </div>
+    <div style="padding:0 6px;cursor:default" onclick="event.stopPropagation()">
+      <div style="font-size:12px;color:var(--text2)">${initDate.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'2-digit'})}</div>
+      <div style="font-size:11px;color:${daysColor};font-weight:500">${daysLabel}</div>
+    </div>
     <button class="col-expand" onclick="toggleExpand('${t.id}')" title="Notes, subtasks, history">${isExp?'▲':'▼'}</button>
   </div>`;
 }
@@ -482,7 +497,28 @@ function expandRow(t){
             <option value="">No category</option>
             ${['General','Finance','Banking','HR','Operations','Sales','Legal'].map(c=>`<option${t.category===c?' selected':''}>${c}</option>`).join('')}
           </select>
-          <input type="date" placeholder="Start date" class="ie ie-date" value="${t.start_date||''}" onchange="saveField('${t.id}','start_date',this.value)" style="flex:1">
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <div style="flex:1">
+            <div style="font-size:11px;color:var(--text3);margin-bottom:3px">Start date</div>
+            <input type="date" class="ie ie-date" value="${t.start_date||''}" onchange="saveField('${t.id}','start_date',this.value)" style="width:100%">
+          </div>
+          <div style="flex:1">
+            <div style="font-size:11px;color:var(--text3);margin-bottom:3px">Initiated</div>
+            <input type="date" class="ie ie-date" value="${t.initiated_date||t.created_at?.split('T')[0]||''}" onchange="saveField('${t.id}','initiated_date',this.value)" style="width:100%">
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px;align-items:flex-end">
+          <div style="flex:1">
+            <div style="font-size:11px;color:var(--text3);margin-bottom:3px">Duration (days)</div>
+            <input type="number" min="1" max="365" placeholder="e.g. 14" class="ie" id="dur-${t.id}" value="" 
+              style="width:100%;font-size:13px" 
+              onchange="setDueFromDuration('${t.id}',this.value)"
+              title="Enter number of days from start → auto-sets due date">
+          </div>
+          <div style="flex:1;font-size:12px;color:var(--text3);padding-bottom:6px">
+            → fills due date automatically
+          </div>
         </div>
         <div style="margin-top:12px">
           <div class="expand-label">% Complete</div>
@@ -523,12 +559,22 @@ async function toggleExpand(id){
   await Promise.all([loadSubtasks(id),loadHistory(id)]);
 }
 
-async function saveField(id,field,value){
+async function setDueFromDuration(id, days){
+  if(!days||days<1)return;
+  const t=tasks.find(x=>x.id===id);if(!t)return;
+  const base=t.start_date?new Date(t.start_date):new Date();
+  base.setDate(base.getDate()+parseInt(days));
+  const due=base.toISOString().split('T')[0];
+  // Update the due date input in the row
+  const row=document.getElementById('tr-'+id);
+  if(row){const inp=row.querySelector('input[type=date]');if(inp)inp.value=due;}
+  await saveField(id,'due',due);
+}
   const t=tasks.find(x=>x.id===id);if(!t)return;
   t[field]=value||null;
   try{await api(`tasks?id=eq.${id}`,'PATCH',{[field]:value||null,updated_at:new Date().toISOString()});}
   catch(e){console.error(e);}
-  if(field!=='notes'&&field!=='start_date')renderTasks();
+  if(field!=='notes'&&field!=='start_date'&&field!=='initiated_date')renderTasks();
   renderDashboard();renderNav();
 }
 
@@ -660,13 +706,22 @@ function renderGantt(filtered,list){
   </div>`;
 }
 
+function calcNewDue(){
+  const days=parseInt(document.getElementById('new-duration').value);
+  if(!days||days<1)return;
+  const start=document.getElementById('new-start').value;
+  const base=start?new Date(start):new Date();
+  base.setDate(base.getDate()+days);
+  document.getElementById('new-due').value=base.toISOString().split('T')[0];
+}
+
 async function addTask(){
   const title=document.getElementById('new-title').value.trim();if(!title)return;
   try{
-    const body={title,person:document.getElementById('new-person').value||null,project:document.getElementById('new-project').value||null,priority:document.getElementById('new-priority').value,due:document.getElementById('new-due').value||null,start_date:document.getElementById('new-start').value||null,notes:document.getElementById('new-notes').value.trim()||null,category:document.getElementById('new-category').value||null,done:false};
+    const body={title,person:document.getElementById('new-person').value||null,project:document.getElementById('new-project').value||null,priority:document.getElementById('new-priority').value,due:document.getElementById('new-due').value||null,start_date:document.getElementById('new-start').value||null,initiated_date:document.getElementById('new-initiated').value||new Date().toISOString().split('T')[0],notes:document.getElementById('new-notes').value.trim()||null,category:document.getElementById('new-category').value||null,done:false};
     const r=await api('tasks','POST',body);if(r&&r[0])tasks.push(r[0]);
     closeModal('add-modal');
-    ['new-title','new-notes','new-due','new-start'].forEach(id=>document.getElementById(id).value='');
+    ['new-title','new-notes','new-due','new-start','new-initiated','new-duration'].forEach(id=>document.getElementById(id).value='');
     renderTasks();renderDashboard();renderNav();
   }catch(e){alert('Error: '+e.message);}
 }
