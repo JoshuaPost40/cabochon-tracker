@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head><title>Loading tasks...</title></head>
+<body>
+<h2 id="status">Loading tasks into tracker...</h2>
+<div id="log" style="font-family:monospace;font-size:13px;margin-top:20px"></div>
+<script>
+const SB='https://nlwujrlfzhgrzdcdstlq.supabase.co';
+const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5sd3VqcmxmemhncnpkY2RzdGxxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMjQwODEsImV4cCI6MjA5NjcwMDA4MX0.il1nk5zOpJJGT6UwsfMui4aQZQJJ79ChmBOITcq-0Ic';
+
+const TASKS = [
+  {title:"Confirm with Herman how Mike will support BarnWurx — integrate in supplier training/handoff if appropriate",person:"Josh Post (COO)",project:"BarnWurx",priority:"high",category:"Operations",notes:"Brian has ~30 SKUs from 5-6 suppliers. Doug to own supplier function. Mike support TBD.",due:"2026-06-16",initiated_date:"2026-06-12",done:false},
+  {title:"Schedule and conduct supplier/inventory training session with Doug (and potentially Mike)",person:"Brian Vanderhoeven (BarnWurx GM)",project:"BarnWurx",priority:"high",category:"Operations",notes:"Cover: QuickBooks inventory management, order placement, supplier follow-up, lead time management.",due:"2026-06-28",initiated_date:"2026-06-12",done:false},
+  {title:"Walk Doug through cash flow spreadsheet — ensure Doug can maintain it going forward",person:"Brian Vanderhoeven (BarnWurx GM)",project:"BarnWurx",priority:"high",category:"Finance",notes:"Brian to transfer knowledge before departure",due:"2026-06-28",initiated_date:"2026-06-12",done:false},
+  {title:"Identify who from Keis team will take over monitoring BarnWurx AP inbox — communicate to Brian",person:"Josh Post (COO)",project:"BarnWurx",priority:"high",category:"Finance",notes:"AP inbox previously monitored by Nina and Janice — currently not actively managed",due:"2026-06-16",initiated_date:"2026-06-12",done:false},
+  {title:"Brian to move cash flow spreadsheet into BarnWurx Finance folder on shared drive",person:"Brian Vanderhoeven (BarnWurx GM)",project:"BarnWurx",priority:"high",category:"Finance",notes:"New live copy — must be accessible to team after departure",due:"2026-06-19",initiated_date:"2026-06-12",done:false},
+  {title:"Sara to review marketing folder — identify all remaining iBarn references and flag to Dan for PDF updates",person:"Sara Buchanan (Exec Admin)",project:"BarnWurx",priority:"high",category:"Sales",notes:"Catalog PDFs have iBarn logo, line drawings, Facebook handle @iBarn Incorporated",due:"2026-06-19",initiated_date:"2026-06-12",done:false},
+  {title:"Brian to notify Sara of any additional missing or incomplete files in BarnWurx shared folders",person:"Brian Vanderhoeven (BarnWurx GM)",project:"BarnWurx",priority:"low",category:"Operations",notes:"Ongoing as Brian continues folder review",initiated_date:"2026-06-12",done:false},
+  {title:"Brian to compile all signed distributor/partner agreements (iBarn era) and send to Ryan for legal review",person:"Brian Vanderhoeven (BarnWurx GM)",project:"BarnWurx",priority:"high",category:"Legal",notes:"Agreements in email only. Brian views as lapsed — Ryan to assess enforceability under BarnWurx.",due:"2026-06-28",initiated_date:"2026-06-12",done:false},
+  {title:"Brian to confirm departure date and submit formal written notice",person:"Brian Vanderhoeven (BarnWurx GM)",project:"BarnWurx",priority:"high",category:"HR",notes:"Anticipated July 3. Possible extension if new employer pushes start date.",due:"2026-06-19",initiated_date:"2026-06-12",done:false},
+  {title:"Josh and Brian touch base Monday June 16 — review outstanding transition items and confirm next steps",person:"Josh Post (COO)",project:"BarnWurx",priority:"high",category:"General",notes:"Weekly check-in to track transition progress",due:"2026-06-16",initiated_date:"2026-06-12",done:false}
+];
+
+async function run(){
+  const log=document.getElementById('log');
+  let ok=0;
+  for(const t of TASKS){
+    try{
+      const r=await fetch(SB+'/rest/v1/tasks',{
+        method:'POST',
+        headers:{'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
+        body:JSON.stringify(t)
+      });
+      if(r.ok){ok++;log.innerHTML+=`✓ ${t.title.substring(0,60)}...<br>`;}
+      else{log.innerHTML+=`✗ ERROR: ${t.title.substring(0,50)}<br>`;}
+    }catch(e){log.innerHTML+=`✗ ${e.message}<br>`;}
+  }
+  document.getElementById('status').textContent=`Done — ${ok}/${TASKS.length} tasks added. You can close this tab.`;
+}
+run();
+</script>
+</body>
+</html>
