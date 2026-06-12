@@ -570,6 +570,8 @@ async function setDueFromDuration(id, days){
   if(row){const inp=row.querySelector('input[type=date]');if(inp)inp.value=due;}
   await saveField(id,'due',due);
 }
+
+async function saveField(id,field,value){
   const t=tasks.find(x=>x.id===id);if(!t)return;
   t[field]=value||null;
   try{await api(`tasks?id=eq.${id}`,'PATCH',{[field]:value||null,updated_at:new Date().toISOString()});}
