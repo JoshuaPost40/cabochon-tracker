@@ -170,6 +170,29 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .notice.info{background:var(--blue-light);color:var(--blue)}
 .report-box{background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:16px;font-size:13px;line-height:1.9;white-space:pre-wrap;font-family:'Courier New',monospace;margin-top:12px;max-height:400px;overflow-y:auto}
 .empty{text-align:center;padding:48px 20px;color:var(--text3);font-size:15px}
+/* KPI */
+.kpi-week-block{margin-bottom:28px}
+.kpi-week-hdr{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);padding:14px 0 8px;border-bottom:1px solid var(--border);margin-bottom:8px;display:flex;justify-content:space-between}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:8px}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:14px 16px}
+.kpi-project{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--gold);margin-bottom:4px}
+.kpi-metric{font-size:13px;color:var(--text2);margin-bottom:6px}
+.kpi-value{font-size:26px;font-weight:700;color:var(--text)}
+.kpi-unit{font-size:13px;color:var(--text3);margin-left:3px}
+.kpi-notes{font-size:12px;color:var(--text3);margin-top:4px;font-style:italic}
+.kpi-by{font-size:11px;color:var(--text3);margin-top:6px}
+/* COMPLIANCE */
+.comp-table{width:100%;border-collapse:collapse}
+.comp-table th{text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);padding:8px 12px;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0}
+.comp-table td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:14px;vertical-align:middle}
+.comp-table tr:hover td{background:var(--surface2)}
+.comp-status{font-size:12px;padding:3px 9px;border-radius:10px;font-weight:500;cursor:pointer}
+.comp-status.upcoming{background:var(--blue-light);color:var(--blue)}
+.comp-status.overdue{background:var(--red-light);color:var(--red)}
+.comp-status.done{background:var(--green-light);color:var(--green)}
+.comp-days{font-size:12px;color:var(--text3)}
+.comp-days.urgent{color:var(--red);font-weight:600}
+.comp-days.soon{color:var(--amber);font-weight:600}
 </style>
 </head>
 <body>
@@ -183,6 +206,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div class="nav-label">Views</div>
       <button class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard">📊 Dashboard</button>
       <button class="nav-item" onclick="showPage('tasks')" id="nav-tasks">✓ All Tasks <span class="nav-count" id="count-open">—</span></button>
+      <button class="nav-item" onclick="showPage('kpis')" id="nav-kpis">📈 KPIs</button>
+      <button class="nav-item" onclick="showPage('compliance')" id="nav-compliance">🗓 Compliance</button>
       <button class="nav-item" onclick="showPage('brief')" id="nav-brief">☀ Morning Brief</button>
       <div class="nav-label">Projects</div>
       <div id="nav-projects"></div>
@@ -243,6 +268,44 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div class="topbar-right"><button class="btn primary" id="brief-btn" onclick="generateBrief()">Generate brief</button></div>
       </div>
       <div class="content"><div id="brief-output"><div class="empty">Hit "Generate brief" to scan your tracker.</div></div></div>
+    </div>
+
+    <!-- KPIs -->
+    <div id="page-kpis" style="display:none;flex-direction:column">
+      <div class="topbar">
+        <div><h1>📈 KPIs</h1><p>Weekly metrics by company</p></div>
+        <div class="topbar-right">
+          <select id="kpi-project-filter" onchange="renderKPIs()" style="font-size:14px;padding:7px 12px;border:1px solid var(--border2);border-radius:var(--r);background:var(--surface);font-family:inherit">
+            <option value="">All projects</option>
+          </select>
+          <button class="btn primary" onclick="openModal('kpi-modal')">+ Add KPI entry</button>
+        </div>
+      </div>
+      <div class="content">
+        <div id="kpi-list"><div class="empty">No KPI data yet. Hit "+ Add KPI entry" to log this week's numbers.</div></div>
+      </div>
+    </div>
+
+    <!-- COMPLIANCE -->
+    <div id="page-compliance" style="display:none;flex-direction:column">
+      <div class="topbar">
+        <div><h1>🗓 Compliance & Key Dates</h1><p>Contract renewals, filings, deadlines</p></div>
+        <div class="topbar-right">
+          <select id="comp-project-filter" onchange="renderCompliance()" style="font-size:14px;padding:7px 12px;border:1px solid var(--border2);border-radius:var(--r);background:var(--surface);font-family:inherit">
+            <option value="">All projects</option>
+          </select>
+          <select id="comp-status-filter" onchange="renderCompliance()" style="font-size:14px;padding:7px 12px;border:1px solid var(--border2);border-radius:var(--r);background:var(--surface);font-family:inherit">
+            <option value="">All</option>
+            <option value="upcoming">Upcoming</option>
+            <option value="done">Done</option>
+            <option value="overdue">Overdue</option>
+          </select>
+          <button class="btn primary" onclick="openModal('compliance-modal')">+ Add date</button>
+        </div>
+      </div>
+      <div class="content">
+        <div id="compliance-list"><div class="empty">No compliance dates yet. Hit "+ Add date" to get started.</div></div>
+      </div>
     </div>
   </div>
 </div>
@@ -308,6 +371,78 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
 </div>
 
+<!-- KPI MODAL -->
+<div class="modal-overlay" id="kpi-modal">
+  <div class="modal">
+    <div class="modal-hdr"><h2>📈 Log KPI entry</h2><button class="modal-close" onclick="closeModal('kpi-modal')">×</button></div>
+    <div class="modal-body">
+      <div class="f2">
+        <div class="field"><label>Project *</label><select id="kpi-project"><option value="">Select project</option></select></div>
+        <div class="field"><label>Week of *</label><input type="date" id="kpi-date"></div>
+      </div>
+      <div class="f2">
+        <div class="field"><label>Metric *</label><input id="kpi-metric" placeholder="e.g. Revenue, Billable Hours"></div>
+        <div class="field"><label>Value *</label><input type="number" id="kpi-value" placeholder="e.g. 127000"></div>
+      </div>
+      <div class="f2">
+        <div class="field"><label>Unit</label><input id="kpi-unit" placeholder="e.g. $, hrs, %"></div>
+        <div class="field"><label>Entered by</label><select id="kpi-enteredby"><option value="">Select</option></select></div>
+      </div>
+      <div class="field"><label>Notes</label><textarea id="kpi-notes" style="min-height:60px" placeholder="Context or commentary..."></textarea></div>
+    </div>
+    <div class="modal-footer"><button class="btn" onclick="closeModal('kpi-modal')">Cancel</button><button class="btn primary" onclick="addKPI()">Save entry</button></div>
+  </div>
+</div>
+
+<!-- COMPLIANCE MODAL -->
+<div class="modal-overlay" id="compliance-modal">
+  <div class="modal">
+    <div class="modal-hdr"><h2>🗓 Add compliance date</h2><button class="modal-close" onclick="closeModal('compliance-modal')">×</button></div>
+    <div class="modal-body">
+      <div class="field"><label>Title *</label><input id="comp-title" placeholder="e.g. HST Filing Q2, Insurance Renewal"></div>
+      <div class="f2">
+        <div class="field"><label>Project *</label><select id="comp-project"><option value="">Select project</option></select></div>
+        <div class="field"><label>Category</label>
+          <select id="comp-category">
+            <option value="">None</option>
+            <option>Tax / CRA</option>
+            <option>Insurance</option>
+            <option>Contract Renewal</option>
+            <option>Lease</option>
+            <option>Payroll</option>
+            <option>Legal</option>
+            <option>License / Permit</option>
+            <option>HR</option>
+            <option>Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="f2">
+        <div class="field"><label>Due date *</label><input type="date" id="comp-due"></div>
+        <div class="field"><label>Recurrence</label>
+          <select id="comp-recurrence">
+            <option value="">One-time</option>
+            <option>Monthly</option>
+            <option>Quarterly</option>
+            <option>Annually</option>
+          </select>
+        </div>
+      </div>
+      <div class="f2">
+        <div class="field"><label>Owner</label><select id="comp-owner"><option value="">Unassigned</option></select></div>
+        <div class="field"><label>Status</label>
+          <select id="comp-status-input">
+            <option value="upcoming">Upcoming</option>
+            <option value="done">Done</option>
+          </select>
+        </div>
+      </div>
+      <div class="field"><label>Notes</label><textarea id="comp-notes" style="min-height:60px" placeholder="Details, links, contacts..."></textarea></div>
+    </div>
+    <div class="modal-footer"><button class="btn" onclick="closeModal('compliance-modal')">Cancel</button><button class="btn primary" onclick="addCompliance()">Save</button></div>
+  </div>
+</div>
+
 <script>
 const SB='https://nlwujrlfzhgrzdcdstlq.supabase.co';
 const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5sd3VqcmxmemhncnpkY2RzdGxxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMjQwODEsImV4cCI6MjA5NjcwMDA4MX0.il1nk5zOpJJGT6UwsfMui4aQZQJJ79ChmBOITcq-0Ic';
@@ -326,7 +461,7 @@ const api=async(path,method='GET',body=null)=>{
 async function init(){
   document.getElementById('dash-date').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
   await Promise.all([loadPeople(),loadProjects()]);
-  await loadTasks();
+  await Promise.all([loadTasks(),loadKPIs(),loadCompliance()]);
   populateSelects();renderNav();renderDashboard();renderTasks();
 }
 
@@ -348,7 +483,8 @@ function populateSelects(){
   ['new-person'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=pOpts;});
   ['new-project'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML='<option value="">No project</option>'+prOpts;});
   ['filter-person'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML='<option value="">All people</option>'+people.map(p=>`<option value="${p}">${p}</option>`).join('');});
-  ['filter-project','minutes-project','report-project'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML='<option value="">All projects</option>'+prOpts;});
+  ['filter-project','minutes-project','report-project','kpi-project-filter','comp-project-filter','kpi-project','comp-project'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML='<option value="">All projects</option>'+prOpts;});
+  ['kpi-enteredby','comp-owner'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML='<option value="">Unassigned</option>'+people.map(p=>`<option value="${p}">${p}</option>`).join('');});
 }
 
 function renderNav(){
@@ -806,9 +942,11 @@ async function generateBrief(){
 }
 
 function showPage(p){
-  ['dashboard','tasks','brief'].forEach(x=>{const el=document.getElementById('page-'+x);if(el)el.style.display=x===p?'flex':'none';});
+  ['dashboard','tasks','brief','kpis','compliance'].forEach(x=>{const el=document.getElementById('page-'+x);if(el)el.style.display=x===p?'flex':'none';});
   document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
   const nav=document.getElementById('nav-'+p);if(nav)nav.classList.add('active');
+  if(p==='kpis')renderKPIs();
+  if(p==='compliance')renderCompliance();
 }
 
 function filterProject(p){showPage('tasks');document.getElementById('tasks-title').textContent=p;document.getElementById('filter-project').value=p;renderTasks();}
@@ -816,6 +954,115 @@ function filterPerson(p){showPage('tasks');document.getElementById('tasks-title'
 function openModal(id){populateSelects();document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 function openAddTask(){openModal('add-modal');}
+
+// ── KPIs ──────────────────────────────────────────
+let kpiData=[];
+async function loadKPIs(){
+  try{const d=await api('kpis?select=*&order=week_date.desc,project.asc');kpiData=d||[];}catch(e){kpiData=[];}
+}
+async function addKPI(){
+  const project=document.getElementById('kpi-project').value;
+  const metric=document.getElementById('kpi-metric').value.trim();
+  const value=document.getElementById('kpi-value').value;
+  const week_date=document.getElementById('kpi-date').value;
+  if(!project||!metric||!value||!week_date)return alert('Project, metric, value and week date are required.');
+  try{
+    const r=await api('kpis','POST',{project,metric,value:parseFloat(value),unit:document.getElementById('kpi-unit').value||null,week_date,entered_by:document.getElementById('kpi-enteredby').value||null,notes:document.getElementById('kpi-notes').value.trim()||null});
+    if(r&&r[0])kpiData.unshift(r[0]);
+    closeModal('kpi-modal');
+    ['kpi-metric','kpi-value','kpi-unit','kpi-notes'].forEach(id=>document.getElementById(id).value='');
+    renderKPIs();
+  }catch(e){alert('Error: '+e.message);}
+}
+function renderKPIs(){
+  const filterProj=document.getElementById('kpi-project-filter')?.value||'';
+  const el=document.getElementById('kpi-list');if(!el)return;
+  if(!kpiData.length){el.innerHTML='<div class="empty">No KPI data yet. Hit "+ Add KPI entry" to log this week\'s numbers.</div>';return;}
+  const filtered=filterProj?kpiData.filter(k=>k.project===filterProj):kpiData;
+  if(!filtered.length){el.innerHTML='<div class="empty">No KPI data for this project.</div>';return;}
+  // Group by week
+  const byWeek={};
+  filtered.forEach(k=>{if(!byWeek[k.week_date])byWeek[k.week_date]=[];byWeek[k.week_date].push(k);});
+  el.innerHTML=Object.entries(byWeek).sort((a,b)=>b[0].localeCompare(a[0])).map(([week,entries])=>`
+    <div class="kpi-week-block">
+      <div class="kpi-week-hdr"><span>Week of ${new Date(week+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}</span></div>
+      <div class="kpi-grid">${entries.map(k=>`
+        <div class="kpi-card">
+          <div class="kpi-project">${k.project}</div>
+          <div class="kpi-metric">${k.metric}</div>
+          <div><span class="kpi-value">${Number(k.value).toLocaleString()}</span><span class="kpi-unit">${k.unit||''}</span></div>
+          ${k.notes?`<div class="kpi-notes">${k.notes}</div>`:''}
+          ${k.entered_by?`<div class="kpi-by">Entered by ${k.entered_by.split(' ')[0]}</div>`:''}
+        </div>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+// ── COMPLIANCE ────────────────────────────────────
+let compData=[];
+async function loadCompliance(){
+  try{const d=await api('compliance?select=*&order=due_date.asc');compData=d||[];}catch(e){compData=[];}
+}
+async function addCompliance(){
+  const title=document.getElementById('comp-title').value.trim();
+  const project=document.getElementById('comp-project').value;
+  const due_date=document.getElementById('comp-due').value;
+  if(!title||!project||!due_date)return alert('Title, project and due date are required.');
+  try{
+    const r=await api('compliance','POST',{title,project,category:document.getElementById('comp-category').value||null,due_date,recurrence:document.getElementById('comp-recurrence').value||null,owner:document.getElementById('comp-owner').value||null,status:document.getElementById('comp-status-input').value||'upcoming',notes:document.getElementById('comp-notes').value.trim()||null});
+    if(r&&r[0])compData.push(r[0]);
+    compData.sort((a,b)=>a.due_date.localeCompare(b.due_date));
+    closeModal('compliance-modal');
+    ['comp-title','comp-notes','comp-due'].forEach(id=>document.getElementById(id).value='');
+    renderCompliance();
+  }catch(e){alert('Error: '+e.message);}
+}
+async function toggleCompStatus(id){
+  const c=compData.find(x=>x.id===id);if(!c)return;
+  const newStatus=c.status==='done'?'upcoming':'done';
+  try{
+    await api(`compliance?id=eq.${id}`,'PATCH',{status:newStatus});
+    c.status=newStatus;renderCompliance();
+  }catch(e){}
+}
+async function deleteCompliance(id){
+  if(!confirm('Delete this compliance item?'))return;
+  try{await api(`compliance?id=eq.${id}`,'DELETE');compData=compData.filter(x=>x.id!==id);renderCompliance();}catch(e){}
+}
+function renderCompliance(){
+  const filterProj=document.getElementById('comp-project-filter')?.value||'';
+  const filterStatus=document.getElementById('comp-status-filter')?.value||'';
+  const el=document.getElementById('compliance-list');if(!el)return;
+  const now=new Date();now.setHours(0,0,0,0);
+  let filtered=compData.filter(c=>{
+    if(filterProj&&c.project!==filterProj)return false;
+    const due=new Date(c.due_date+'T12:00:00');
+    const autoStatus=c.status==='done'?'done':due<now?'overdue':'upcoming';
+    if(filterStatus&&autoStatus!==filterStatus)return false;
+    return true;
+  });
+  if(!filtered.length){el.innerHTML='<div class="empty">No compliance dates match this filter.</div>';return;}
+  el.innerHTML=`<table class="comp-table"><thead><tr>
+    <th>Title</th><th>Project</th><th>Category</th><th>Due date</th><th>Days</th><th>Recurrence</th><th>Owner</th><th>Status</th><th></th>
+  </tr></thead><tbody>${filtered.map(c=>{
+    const due=new Date(c.due_date+'T12:00:00');
+    const diff=Math.round((due-now)/86400000);
+    const autoStatus=c.status==='done'?'done':diff<0?'overdue':'upcoming';
+    const daysLabel=c.status==='done'?'Done':diff===0?'Today':diff>0?`${diff}d away`:`${Math.abs(diff)}d overdue`;
+    const daysClass=c.status==='done'?'':diff<0?'urgent':diff<=7?'soon':'';
+    return `<tr>
+      <td style="font-weight:500">${c.title}</td>
+      <td><span class="badge project">${c.project}</span></td>
+      <td style="font-size:13px;color:var(--text2)">${c.category||'—'}</td>
+      <td style="font-size:13px">${c.due_date}</td>
+      <td><span class="comp-days ${daysClass}">${daysLabel}</span></td>
+      <td style="font-size:12px;color:var(--text3)">${c.recurrence||'One-time'}</td>
+      <td style="font-size:13px;color:var(--text2)">${c.owner?c.owner.split(' ')[0]:'—'}</td>
+      <td><span class="comp-status ${autoStatus}" onclick="toggleCompStatus('${c.id}')">${autoStatus.charAt(0).toUpperCase()+autoStatus.slice(1)}</span></td>
+      <td><button style="border:none;background:none;cursor:pointer;color:var(--text3);font-size:15px" onclick="deleteCompliance('${c.id}')">×</button></td>
+    </tr>`;
+  }).join('')}</tbody></table>`;
+}
 
 init();
 </script>
